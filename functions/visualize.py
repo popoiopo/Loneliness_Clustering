@@ -11,17 +11,24 @@ from functions.misc import bootstrap_resample_data
 
 
 def plot_timeseries(ax, data, a, data_std=[], cmap="tab10", vmin=-1, vmax=1):
-    cmap = plt.get_cmap(cmap)
-    norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
-    # ax.plot(data.T, color=cmap(norm(a)), alpha=0.2)
-    data_mean = np.mean(data, axis=0)
-    if data_std == []:
-        data_std = np.std(data, axis=0)
-    else:
-        data_std = np.mean(data_std, axis=0)
-    ax.plot(data_mean, color=cmap(norm(a)), zorder=11)
-    ax.fill_between(range(len(data_mean)), data_mean-data_std,
-                    data_mean+data_std, color=cmap(norm(a)), zorder=10, alpha=0.5)
+    if len(data) > 0:
+        cmap = plt.get_cmap(cmap)
+        norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
+        # ax.plot(data.T, color=cmap(norm(a)), alpha=0.2)
+        data_mean = np.mean(data, axis=0)
+        if data_std == []:
+            data_std = np.std(data, axis=0)
+        else:
+            data_std = np.mean(data_std, axis=0)
+        ax.plot(data_mean, color=cmap(norm(a)), zorder=11)
+        ax.fill_between(
+            range(len(data_mean)),
+            data_mean - data_std,
+            data_mean + data_std,
+            color=cmap(norm(a)),
+            zorder=10,
+            alpha=0.5,
+        )
 
 
 def set_labels_and_titles(
@@ -60,12 +67,11 @@ def set_labels_and_titles(
 
 
 def plot_metric_data(data, energies, cols, name):
-
     if len(data) == 0:
         rowcol = (1, 1)
     else:
-        rowcol = (int(np.ceil(len(data)/cols)), cols)
-    fig, ax = plt.subplots(*rowcol, figsize=(5*rowcol[1], 4*rowcol[0]))
+        rowcol = (int(np.ceil(len(data) / cols)), cols)
+    fig, ax = plt.subplots(*rowcol, figsize=(5 * rowcol[1], 4 * rowcol[0]))
 
     ordered_ids = np.argsort(energies)
 
@@ -75,7 +81,7 @@ def plot_metric_data(data, energies, cols, name):
         elif rowcol[1] == 1 or rowcol[0] == 1:
             axis = ax[idx]
         else:
-            axis = ax[int(np.floor(idx/cols)), idx % cols]
+            axis = ax[int(np.floor(idx / cols)), idx % cols]
         x = np.array(energies)[ordered_ids]
         y = np.mean(data[d], axis=0)
         axis.plot(x, y[ordered_ids])
@@ -92,7 +98,8 @@ def plot_triangle_heatmap(gm, group):
     fig, ax = plt.subplots(1, 1, figsize=(6, 6.5))
     for c in gm.coleman:
         means, mean_of_means, se_of_means = bootstrap_resample_data(
-            [d[group] for d in gm.coleman[c]], gm.conf.n_bootstrap_resample)
+            [d[group] for d in gm.coleman[c]], gm.conf.n_bootstrap_resample
+        )
         x, y = get_xy(*[float(i) for i in c.split(",")])
         values0 = np.array([val[0] for val in gm.coleman[c]])
         values1 = np.array([val[1] for val in gm.coleman[c]])
@@ -114,11 +121,11 @@ def plot_triangle_heatmap(gm, group):
     ps = [point_on_triangle(*l) for l in locs]
     x, y, c = zip(*ps)
     ax.plot(x, y, color="grey", alpha=1)
-    ax.text(x[0]-0.02, y[0], "Behavior", ha='right')
-    ax.text(x[1], y[1]+.04, "Cognitive", ha="center")
-    ax.text(x[2]+0.02, y[2], "Contagion")
+    ax.text(x[0] - 0.02, y[0], "Behavior", ha="right")
+    ax.text(x[1], y[1] + 0.04, "Cognitive", ha="center")
+    ax.text(x[2] + 0.02, y[2], "Contagion")
 
-    plt.axis('off')
+    plt.axis("off")
     plt.show()
 
 
@@ -126,18 +133,18 @@ def point_on_triangle(x, y):
     """
     Get point on equilateral unit triangle mapped from x,y coordinates.
     """
-    pt1, pt2, pt3 = (0, 0), (.5, np.sqrt(3)/2), (1, 0)
+    pt1, pt2, pt3 = (0, 0), (0.5, np.sqrt(3) / 2), (1, 0)
     q = abs(x - y)
     s, t, u = q, 0.5 * (x + y - q), 1 - 0.5 * (q + x + y)
     return (
         s * pt1[0] + t * pt2[0] + u * pt3[0],
         s * pt1[1] + t * pt2[1] + u * pt3[1],
-        [s, t, u]
+        [s, t, u],
     )
 
 
 def get_xy(s, t, u):
-    pt1, pt2, pt3 = (0, 0), (.5, np.sqrt(3)/2), (1, 0)
+    pt1, pt2, pt3 = (0, 0), (0.5, np.sqrt(3) / 2), (1, 0)
     return (
         s * pt1[0] + t * pt2[0] + u * pt3[0],
         s * pt1[1] + t * pt2[1] + u * pt3[1],
@@ -182,14 +189,13 @@ def nx_network_mp4(Gs, labels, save_path, remove_inactive_nodes=False):
     ax.add_artist(edges)
 
     # Add Nodes
-    sizes = [100 + (Gs[0].nodes[node]["k"]*300) for node in Gs[0].nodes]
+    sizes = [100 + (Gs[0].nodes[node]["k"] * 300) for node in Gs[0].nodes]
     colors = [cmap(Gs[0].nodes[node]["e"]) for node in Gs[0].nodes]
     coordinates = np.array([i for i in pos.values()]).T
     nodes = ax.scatter(*coordinates, s=sizes, alpha=1, color=colors)
 
     # Add Time indication
-    text = ax.text(1.1, 1, labels[0], ha="right",
-                   fontsize=56, color='C1', wrap=True)
+    text = ax.text(1.1, 1, labels[0], ha="right", fontsize=56, color="C1", wrap=True)
 
     # Combine elements into list to pass later on
     actors = [edges, nodes, text]
@@ -222,24 +228,21 @@ def nx_network_mp4(Gs, labels, save_path, remove_inactive_nodes=False):
         segments = [[pos[x], pos[y]] for x, y in Gs[i].edges()]
         edges.set_paths(segments)
 
-        sizes = [100 + (Gs[i].nodes[node]["k"]*300) for node in Gs[i].nodes]
+        sizes = [100 + (Gs[i].nodes[node]["k"] * 300) for node in Gs[i].nodes]
         colors = [cmap(Gs[i].nodes[node]["e"]) for node in Gs[i].nodes]
         nodes.set_color(colors)
         nodes.set_sizes(sizes)
         text.set_text(labels[i])
 
     # Create animation and save it
-    ani = animation.FuncAnimation(fig,
-                                  update,
-                                  frames=len(Gs),
-                                  fargs=(*actors, pos),
-                                  interval=350,
-                                  repeat=False)
+    ani = animation.FuncAnimation(
+        fig, update, frames=len(Gs), fargs=(*actors, pos), interval=350, repeat=False
+    )
     ani.save(save_path)
     return ani
 
 
-def plot_grid(ax, G, with_labels=False, title='', cmap_name="viridis"):
+def plot_grid(ax, G, with_labels=False, title="", cmap_name="viridis"):
     """Plot grid network.
 
     Parameters
@@ -269,32 +272,51 @@ def plot_grid(ax, G, with_labels=False, title='', cmap_name="viridis"):
         G,
         pos,
         node_size=sizes,
-        edge_color='gray',
+        edge_color="gray",
         node_color=colors,
         with_labels=with_labels,
         alpha=0.9,
         font_size=14,
-        ax=ax)
+        ax=ax,
+    )
     ax.set_title(title)
     return
 
 
 def get_xy(s, t, u):
-    pt1, pt2, pt3 = (0, 0), (.5, np.sqrt(3)/2), (1, 0)
+    pt1, pt2, pt3 = (0, 0), (0.5, np.sqrt(3) / 2), (1, 0)
     return (
         s * pt1[0] + t * pt2[0] + u * pt3[0],
         s * pt1[1] + t * pt2[1] + u * pt3[1],
     )
 
 
-def plot_triangle(data, e_var, assort, network_gen_fn, n_samples, n_per_group, p_rel, n_runs, path_name_add="", save_fig=False):
+def plot_triangle(
+    data,
+    e_var,
+    assort,
+    network_gen_fn,
+    n_samples,
+    n_per_group,
+    p_rel,
+    n_runs,
+    path_name_add="",
+    save_fig=False,
+):
     cmap = cm.rainbow
     norm = mcolors.Normalize(vmin=-1, vmax=1)
     fig, ax = plt.subplots(1, 1, figsize=(6, 6.5))
-    def size(x): return 15 + (x*240)
+
+    def size(x):
+        return 15 + (x * 240)
+
     for p in data:
-        ax.scatter(p[0], p[1], color=cmap(
-            norm(np.nanmean(data[p]))), s=size(np.nanmean(e_var[p])))
+        ax.scatter(
+            p[0],
+            p[1],
+            color=cmap(norm(np.nanmean(data[p]))),
+            s=size(np.nanmean(e_var[p])),
+        )
 
     # setup the colorbar
     scalarmappaple = cm.ScalarMappable(norm=norm, cmap=cmap)
@@ -305,13 +327,18 @@ def plot_triangle(data, e_var, assort, network_gen_fn, n_samples, n_per_group, p
     ps = [point_on_triangle(*l) for l in locs]
     x, y, c = zip(*ps)
     ax.plot(x, y, color="grey", alpha=1)
-    ax.text(x[0]-0.02, y[0], "Behavior", ha='right')
-    ax.text(x[1], y[1]+.04, "Cognitive", ha="center")
-    ax.text(x[2]+0.02, y[2], "Contagion")
-    ax.text(-.15, y[1], "Assortativity\n" + r"$t_0$=" +
-            f"{assort}", ha='left', fontdict={"fontsize": 14})
+    ax.text(x[0] - 0.02, y[0], "Behavior", ha="right")
+    ax.text(x[1], y[1] + 0.04, "Cognitive", ha="center")
+    ax.text(x[2] + 0.02, y[2], "Contagion")
+    ax.text(
+        -0.15,
+        y[1],
+        "Assortativity\n" + r"$t_0$=" + f"{assort}",
+        ha="left",
+        fontdict={"fontsize": 14},
+    )
 
-    plt.axis('off')
+    plt.axis("off")
     if save_fig:
         save_path = f"networks/imgs/{network_gen_fn.__name__}-{assort}a-{n_samples}s-{n_per_group}n-{p_rel}p_{n_runs}nr-{len(data)}-{path_name_add}npoints_triangle.png"
         plt.savefig(save_path)

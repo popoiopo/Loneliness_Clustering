@@ -15,14 +15,18 @@ class mainModel:
         # Check input values
         if np.round(sum(point), 3) != 1:
             raise ValueError(
-                f"Parameters pc+pb+pec != 1 for point({point}), relative strengths cannot exceed or be lower than one.")
+                f"Parameters pc+pb+pec != 1 for point({point}), relative strengths cannot exceed or be lower than one."
+            )
 
         assert isinstance(
-            G, nx.classes.digraph.DiGraph), "Given graph is not a NetworkX DiGraph."
-        assert all(["e" in G.nodes[i] for i in G.nodes]
-                   ), "Nodes in graph don't have energy variable."
-        assert all(["k" in G.nodes[i] for i in G.nodes]
-                   ), "Nodes in graph don't have connectivity variable."
+            G, nx.classes.digraph.DiGraph
+        ), "Given graph is not a NetworkX DiGraph."
+        assert all(
+            ["e" in G.nodes[i] for i in G.nodes]
+        ), "Nodes in graph don't have energy variable."
+        assert all(
+            ["k" in G.nodes[i] for i in G.nodes]
+        ), "Nodes in graph don't have connectivity variable."
 
     ##########################
     # Simulate next timestep #
@@ -71,24 +75,29 @@ class mainModel:
             for j in self.G.in_edges(i):
                 csum.append(self.G.nodes[j[0]]["k"])
                 bsum.append(
-                    self.G.nodes[i]["e"] * ((self.G.nodes[j[0]]["e"] - .4)) / self.G.out_degree(j[0]))
+                    self.G.nodes[i]["e"]
+                    * ((self.G.nodes[j[0]]["e"] - 0.5))
+                    / self.G.out_degree(j[0])
+                )
                 ecsum.append(self.G.nodes[j[0]]["e"])
 
-            christakis_conjecture = sum([
-                self.pc * (self.G.nodes[i]["k"] -
-                           sum(csum)/self.G.in_degree(i)),
-                self.pb * (sum(bsum) / self.G.in_degree(i)),
-                self.pec *
-                ((np.mean(ecsum)-self.G.nodes[i]["e"]) / self.G.in_degree(i))
-            ]) + (np.random.normal(0, 0.02) * np.sqrt(self.h))
+            christakis_conjecture = sum(
+                [
+                    self.pc * (self.G.nodes[i]["k"] - sum(csum) / self.G.in_degree(i)),
+                    self.pb * (sum(bsum) / self.G.in_degree(i)),
+                    self.pec
+                    * (
+                        (np.mean(ecsum) - self.G.nodes[i]["e"])  # / self.G.in_degree(i)
+                    ),  # mayyybe change this indegree, and change the theta 0.4 to 0.5
+                ]
+            ) + (np.random.normal(0, 0.02) * np.sqrt(self.h))
 
             de = christakis_conjecture * e * (1 - e)
         else:
             de = 0
 
         # Return next connectivity and energy for next time step
-        new_k, new_e = np.array([k, e]) + self.h * \
-            (np.array([dk, de]))
+        new_k, new_e = np.array([k, e]) + self.h * (np.array([dk, de]))
 
         # Add noise so they won't just converge to a artificial point
         # new_e += np.random.normal(0, 0.01)
@@ -113,24 +122,42 @@ class mainModel:
         #     i)])/self.G.in_degree(i))*np.random.normal(1, 0.1)))
 
         # *np.random.normal(1, 0.05))
-        return self.G.nodes[i]["k"] - ((sum([self.G.nodes[j[0]]["k"] for j in self.G.in_edges(i)])/self.G.in_degree(i)))
+        return self.G.nodes[i]["k"] - (
+            (
+                sum([self.G.nodes[j[0]]["k"] for j in self.G.in_edges(i)])
+                / self.G.in_degree(i)
+            )
+        )
 
     def behavior(self, i):
         # Check if node has neighbors
         if self.G.in_degree(i) == 0:
             return 0
 
-        return sum([
-            self.G.nodes[i]["e"] * ((self.G.nodes[j[0]]["e"] - .4) / self.G.out_degree(j[0])) for j in self.G.in_edges(i)
-        ]) / self.G.in_degree(i)
+        return sum(
+            [
+                self.G.nodes[i]["e"]
+                * ((self.G.nodes[j[0]]["e"] - 0.4) / self.G.out_degree(j[0]))
+                for j in self.G.in_edges(i)
+            ]
+        ) / self.G.in_degree(i)
 
     def emotional_contagion(self, i):
         # Check if node has neighbors
         if self.G.in_degree(i) == 0:
             return 0
 
-        return 2 * sum([((self.G.nodes[i]["e"] + self.G.nodes[j[0]]["e"]) / 2) - self.G.nodes[i]["e"]
-                        for j in self.G.in_edges(i)]) / self.G.in_degree(i)
+        return (
+            2
+            * sum(
+                [
+                    ((self.G.nodes[i]["e"] + self.G.nodes[j[0]]["e"]) / 2)
+                    - self.G.nodes[i]["e"]
+                    for j in self.G.in_edges(i)
+                ]
+            )
+            / self.G.in_degree(i)
+        )
 
     # def cognitive(self, i):
     #     if self.G.out_degree(i) == 0:
