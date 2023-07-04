@@ -75,5 +75,6 @@
     "base_path": "output",
     "t0_path": "t0_graphs",
     "tt_path": "tt_graphs",
-    "dyn_path": "dyn_data"
+    "dyn_path": "dyn_data",
+    "raw_data": "raw_data"
 }

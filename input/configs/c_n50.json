@@ -1,0 +1,44 @@
+{
+    "points": [
+        [
+            1,
+            0,
+            0
+        ],
+        [
+            0,
+            1,
+            0
+        ],
+        [
+            0,
+            0,
+            1
+        ]
+    ],
+    "a_s": [
+        0.8,
+        0.6,
+        0.4,
+        0.2,
+        0.0,
+        -0.2,
+        -0.4,
+        -0.6,
+        -0.8
+    ],
+    "beta": 0.5,
+    "p_rel": 11,
+    "sim_dur": 10000,
+    "noise": 0.02,
+    "network_gen_fn": "barabasi_albert",
+    "e_samples": [
+        0.2,
+        0.8
+    ],
+    "n_per_group": 50,
+    "base_path": "output",
+    "t0_path": "t0_graphs",
+    "tt_path": "tt_graphs",
+    "dyn_path": "dyn_data"
+}

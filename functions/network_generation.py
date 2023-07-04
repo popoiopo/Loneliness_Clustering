@@ -175,6 +175,82 @@ def focussed_assort_network_gen(
     )
 
 
+def focussed_assort_networks_gen(
+    aim_assort_values,
+    e_groups,
+    n_per_group,
+    p_rel,
+    network_gen_fn=barabasi_albert,
+    max_rec=100,
+    cur_rec=0,
+    debug=False,
+):
+    G_list = []
+    p_list = []
+    G, component_links = fully_assortative_network(
+        e_groups, n_per_group, p_rel, network_gen_fn
+    )
+
+    if 1.0 in aim_assort_values:
+        G_list.append(G.copy())
+        p_list.append(1.0)
+        if len(G_list) == len(aim_assort_values):
+            return G_list
+
+    # Generate default network
+    p = np.round(pearson(G), 2) + 0.0
+    avg_degree = calc_avg_degree(G)
+
+    if debug:
+        ps = [p]
+
+    rand_component_links = component_links.sample(frac=1)
+    for _, row in rand_component_links.iterrows():
+        G.remove_edges_from([row[e_groups[0]], row[e_groups[1]]])
+        G.add_edge(row[e_groups[0]][0], row[e_groups[1]][1])
+        G.add_edge(row[e_groups[1]][0], row[e_groups[0]][1])
+
+        # Calculate pearson and store graph if needed
+        p = np.round(pearson(G), 2) + 0.0
+        if debug:
+            ps.append(p)
+
+        if p in aim_assort_values and p not in p_list:
+            if debug:
+                print(ps)
+                plt.plot(ps)
+                plt.show()
+
+            assert (
+                calc_avg_degree(G) == avg_degree
+            ), f"Average degree changed from {calc_avg_degree(G)} to {avg_degree}, please check rewiring."
+            print(f"adding {p=}")
+            G_list.append(G.copy())
+            p_list.append(p)
+            if len(G_list) == len(aim_assort_values):
+                return G_list
+
+    if debug:
+        print(ps)
+        plt.plot(ps)
+        plt.show()
+    if cur_rec == max_rec:
+        raise Exception("Exceeded max recursion.")
+
+    assert (
+        calc_avg_degree(G) == avg_degree
+    ), f"Average degree changed from {calc_avg_degree(G)} to {avg_degree}, please check rewiring."
+    return focussed_assort_networks_gen(
+        aim_assort_values,
+        e_groups,
+        n_per_group,
+        p_rel,
+        network_gen_fn=network_gen_fn,
+        cur_rec=cur_rec + 1,
+        max_rec=max_rec,
+    )
+
+
 def write_graph(G, mypath, predefined_name="None"):
     if not os.path.exists(mypath):
         os.makedirs(mypath)
